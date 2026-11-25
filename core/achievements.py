@@ -1,8 +1,3 @@
-"""Достижения игрока. Чистая логика без интерфейса — проверяется тестами.
-
-Каждое событие игры (бросок, заезд, щелчок) превращается в список кодов,
-которые игрок заработал. Хранит открытые достижения база (RecordsDB.unlock).
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,7 +8,7 @@ class Achievement:
     code: str
     title: str
     text: str
-    icon: str  # horse / bone / crown / wind / book / people / target / clean / ten
+    icon: str
 
 
 ALL = [
@@ -29,10 +24,10 @@ ALL = [
 ]
 BY_CODE = {a.code: a for a in ALL}
 
-HERD = 3          # коней за бросок для «Табуна»
-FAST_THROWS = 14  # бросков для «Быстрее ветра»
-VETERAN = 10      # заездов для «Бывалого наездника»
-SNIPER = 3        # попаданий подряд для «Меткого щелчка»
+HERD = 3
+FAST_THROWS = 14
+VETERAN = 10
+SNIPER = 3
 
 
 def for_throw(horses: int) -> list[str]:
@@ -46,7 +41,6 @@ def for_throw(horses: int) -> list[str]:
 
 def for_race(won: bool, throws: int, quiz_ok: int, quiz_asked: int, hotseat: bool,
              races_played: int, classic: bool = True) -> list[str]:
-    """classic=False — быстрый заезд: «Быстрее ветра» в нём не даётся, иначе слишком легко."""
     out = []
     if won:
         out.append("winner")

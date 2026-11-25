@@ -1,4 +1,3 @@
-"""Проверка имени игрока."""
 import re
 
 MAX_NAME_LEN = 20
@@ -6,11 +5,10 @@ _NAME_RE = re.compile(r"^[A-Za-zА-Яа-яЁёҮүӨөҺһ0-9 _\-]+$")
 
 
 class NameError_(ValueError):
-    """Некорректное имя игрока (текст ошибки — для пользователя)."""
+    pass
 
 
 def validate_name(raw: str | None) -> str:
-    """Возвращает очищенное имя или бросает NameError_ с понятным сообщением."""
     name = " ".join((raw or "").split())
     if not name:
         raise NameError_("Имя не может быть пустым. Введите, как вас зовут.")

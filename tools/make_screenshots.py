@@ -1,28 +1,26 @@
-"""Снимает скриншоты для README: сам проходит меню, заезд, мини-игру и справку.
-Запуск: python tools/make_screenshots.py   (картинки появятся в docs/)"""
 import math
 import os
 import sys
 from pathlib import Path
 
-os.environ["SHAGAI_NO_SOUND"] = "1"   # снимаем молча
-os.environ["SHAGAI_NO_TOUR"] = "1"    # подсказки покажем вручную, не отмечая «просмотрено»
+os.environ["SHAGAI_NO_SOUND"] = "1"
+os.environ["SHAGAI_NO_TOUR"] = "1"
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 DOCS = ROOT / "docs"
 
-from PySide6.QtCore import QEvent, QPointF, Qt, QTimer  # noqa: E402
-from PySide6.QtGui import QMouseEvent  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtCore import QEvent, QPointF, Qt, QTimer
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QApplication
 
-import ui.screens as S  # noqa: E402
-from core.db import RecordsDB  # noqa: E402
-from core.shagai import Side  # noqa: E402
-from ui.certificate import CertData, render  # noqa: E402
-from ui.interactive import FlipCard  # noqa: E402
-from ui.main_window import MainWindow  # noqa: E402
-from ui.profile import PlayerCard  # noqa: E402
-from ui.theme import QSS  # noqa: E402
+import ui.screens as S
+from core.db import RecordsDB
+from core.shagai import Side
+from ui.certificate import CertData, render
+from ui.interactive import FlipCard
+from ui.main_window import MainWindow
+from ui.profile import PlayerCard
+from ui.theme import QSS
 
 app = QApplication(sys.argv)
 app.setStyleSheet(QSS)
@@ -61,13 +59,10 @@ steps = []
 
 
 def at(delay, fn):
-    """Шаги идут строго по очереди: каждый ждёт свою паузу ПОСЛЕ предыдущего.
-    (Длинные таймеры Qt на Windows неточные — заранее расставленные шаги перепутались бы.)"""
     steps.append((delay, fn))
 
 
 def when(cond, delay, fn):
-    """Шаг, который сначала ждёт условия (например, «конь финишировал»), потом паузу."""
     steps.append((delay, fn, cond))
 
 
@@ -82,7 +77,7 @@ def run(i=0):
 
 
 rigged = [Side.MORIN, Side.MORIN, Side.HONIN, Side.YAMAAN, Side.TEMEEN]
-S.throw = lambda rng=None: list(rigged)  # снимаем удачный бросок
+S.throw = lambda rng=None: list(rigged)
 
 at(500, lambda: snap("shot_menu"))
 at(100, lambda: w.go("setup", {"mode": 1}))
@@ -97,7 +92,6 @@ at(3900, lambda: snap("shot_game"))
 
 
 def to_finish():
-    """Новый заезд, конь за две кости до финиша — ждём ход игрока и бросаем."""
     w.go("game", {"names": ["Николай"], "opponents": 2})
     g.fast_btn.setChecked(True)
     g.human.position = g.race.finish - 2
@@ -108,8 +102,8 @@ def to_finish():
 at(4200, to_finish)
 at(900, lambda: snap("shot_drama"))
 at(100, lambda: (g._press(), QTimer.singleShot(300, g._release)))
-when(lambda: g.track.winner >= 0, 1300, lambda: snap("shot_finish"))  # лучи и хадаки, до итогового окна
-at(2500, lambda: db.delete(g.last_record_id) if g.last_record_id else None)  # подстроенный заезд — не в таблицу
+when(lambda: g.track.winner >= 0, 1300, lambda: snap("shot_finish"))
+at(2500, lambda: db.delete(g.last_record_id) if g.last_record_id else None)
 at(100, lambda: render(CertData("Николай", 1320, 15, 3)).scaledToWidth(1100, Qt.SmoothTransformation)
    .save(str(DOCS / "shot_certificate.png")))
 

@@ -1,4 +1,3 @@
-"""Экраны приложения."""
 from __future__ import annotations
 
 import random
@@ -39,7 +38,6 @@ def label(text: str, name: str = "", wrap: bool = False, align=None) -> QLabel:
 
 
 def ask(parent, title: str, text: str, yes: str, no: str, danger: bool = False) -> bool:
-    """Вопрос с понятными русскими кнопками вместо «Yes / No»."""
     box = QMessageBox(QMessageBox.Warning if danger else QMessageBox.Question, title, text, parent=parent)
     y = box.addButton(yes, QMessageBox.AcceptRole)
     n = box.addButton(no, QMessageBox.RejectRole)
@@ -62,7 +60,6 @@ def button(text: str, name: str = "", tip: str = "") -> QPushButton:
 
 
 class Screen(OrnamentBackground):
-    """Базовый экран: заголовок, кнопка «Назад», Esc — назад."""
     navigate = Signal(str, dict)
 
     def __init__(self, title: str = "", subtitle: str = "", back: bool = True):
@@ -88,13 +85,11 @@ class Screen(OrnamentBackground):
     def go_back(self):
         self.navigate.emit("menu", {})
 
-    def on_show(self, **kw):  # вызывается при переходе на экран
+    def on_show(self, **kw):
         pass
 
 
 class PosterTitle(QWidget):
-    """Крупный заголовок плотным набором. Рисуем контуром букв: QLabel обрезает кратку
-    над «Й» у узких шрифтов и не умеет сжимать межстрочный интервал."""
 
     def __init__(self, lines, px: int):
         super().__init__()
@@ -102,7 +97,7 @@ class PosterTitle(QWidget):
         self.font_ = ui_font(px, title=True)
         fm = QFontMetricsF(self.font_)
         self.step = fm.capHeight() * 1.22
-        self.top = fm.capHeight() * 0.3  # место под кратку
+        self.top = fm.capHeight() * 0.3
         self.setFixedSize(int(max(fm.horizontalAdvance(s) for s in lines)) + 4,
                           int(self.top + self.step * (len(lines) - 1) + fm.capHeight() + fm.descent()))
 
@@ -116,7 +111,6 @@ class PosterTitle(QWidget):
         p.fillPath(path, QColor(T.INK))
 
 
-# ======================= Главное меню =======================
 class MenuScreen(Screen):
     def __init__(self, sounds):
         super().__init__(back=False)
@@ -193,7 +187,6 @@ class MenuScreen(Screen):
         self.sound_btn.setText("Звук: вкл" if self.sounds.enabled else "Звук: выкл")
 
 
-# ======================= Правила / О народе =======================
 class TextScreen(Screen):
     def __init__(self, title, subtitle, html, with_play=True):
         super().__init__(title, subtitle)
@@ -207,12 +200,10 @@ class TextScreen(Screen):
             self.outer.addWidget(b, 0, Qt.AlignHCenter)
 
 
-# ======================= Ввод имени =======================
 MAX_PLAYERS = 4
 
 
 class NameRow(QWidget):
-    """Строка ввода имени: цветная метка наездника, поле, кнопка «убрать»."""
 
     def __init__(self, idx: int, on_remove, on_enter, on_change):
         super().__init__()
@@ -223,7 +214,7 @@ class NameRow(QWidget):
         self.chip.setFixedSize(14, 40)
         h.addWidget(self.chip)
         self.edit = QLineEdit()
-        self.edit.setMaxLength(MAX_NAME_LEN + 10)  # даём ввести лишнее, чтобы показать понятную ошибку
+        self.edit.setMaxLength(MAX_NAME_LEN + 10)
         self.edit.returnPressed.connect(on_enter)
         self.edit.textChanged.connect(on_change)
         h.addWidget(self.edit, 1)
@@ -332,7 +323,6 @@ class SetupScreen(Screen):
         self._add_row()
         self._set_mode(self.SOLO)
 
-    # --- строки имён ---
     def _add_row(self, focus=False):
         if len(self.rows) >= MAX_PLAYERS:
             return
@@ -391,9 +381,7 @@ class SetupScreen(Screen):
         self.rows[0].edit.setFocus()
         self.rows[0].edit.selectAll()
 
-    # --- проверка ---
     def _check(self) -> tuple[list[str], int, str]:
-        """Возвращает (имена, номер строки с ошибкой или -1, текст ошибки)."""
         names: list[str] = []
         multi = len(self.rows) > 1
         for i, r in enumerate(self.rows):
@@ -411,7 +399,7 @@ class SetupScreen(Screen):
         n = len(" ".join(self.rows[0].edit.text().split())) if self.rows else 0
         self.counter.setText(f"{n} / {MAX_NAME_LEN}")
         self.counter.setStyleSheet(f"color: {T.RED};" if n > MAX_NAME_LEN else "")
-        if self.error.text().strip():  # после первой ошибки подсказываем на лету
+        if self.error.text().strip():
             _, bad, msg = self._check()
             self.error.setText(msg or " ")
             for i, r in enumerate(self.rows):
@@ -439,12 +427,11 @@ class SetupScreen(Screen):
         for i, dx in enumerate((0, -10, 10, -7, 7, -3, 0)):
             a.setKeyValueAt(i / 6, p + type(p)(dx, 0))
         lay = w.parentWidget().layout()
-        a.finished.connect(lambda: (lay.invalidate(), lay.activate()))  # вернуть поле на место
+        a.finished.connect(lambda: (lay.invalidate(), lay.activate()))
         a.start()
         self._shake_anim = a
 
 
-# ======================= Игра =======================
 class ResultOverlay(QWidget):
     action = Signal(str)
 
@@ -513,7 +500,6 @@ class ResultOverlay(QWidget):
 
 
 class QuizOverlay(QWidget):
-    """«Вопрос знатока»: вопрос о народе с тремя вариантами. Верный ответ — бонус к очкам."""
     done = Signal(bool)
 
     def __init__(self, parent):
@@ -592,7 +578,6 @@ class QuizOverlay(QWidget):
 
 
 class FactCard(QFrame):
-    """Карточка «Знаете ли вы?» — новый факт о бурятах на каждом ходу игрока."""
 
     def __init__(self):
         super().__init__()
@@ -627,12 +612,12 @@ class FactCard(QFrame):
 
 
 THROW_TEXT = "Бросить шагай  →"
-QUIZ_AT = (2, 5, 8)  # после какого своего броска игроку задаётся вопрос
+QUIZ_AT = (2, 5, 8)
 
 
 class GameScreen(Screen):
     finished = Signal(dict)
-    achieve = Signal(str, list)  # имя, коды достижений
+    achieve = Signal(str, list)
 
     def __init__(self, sounds):
         super().__init__("Мори урилдаан", "Каждый «конь» в броске — шаг вперёд. Пройдите 12 костей первым!",
@@ -728,7 +713,7 @@ class GameScreen(Screen):
         self.dice.reset()
         self.track.stop()
         self.humans = [Rider(n, is_human=True) for n in names]
-        self.human = self.humans[0]  # чья статистика сейчас на экране
+        self.human = self.humans[0]
         self.hot = len(self.humans) > 1
         riders = self.humans + [Rider(n) for n in AI_NAMES[:opponents]]
         self.race = Race(riders, rng=self.rng, length=track)
@@ -736,12 +721,12 @@ class GameScreen(Screen):
         self.busy = False
         self.aborted = False
         self._holding = False
-        self.quiz = {id(h): [0, 0] for h in self.humans}  # [верных, заданных]
+        self.quiz = {id(h): [0, 0] for h in self.humans}
         self._questions = self.rng.sample(texts.QUIZ, min(len(texts.QUIZ), len(QUIZ_AT) * len(self.humans)))
         self.log.setText("Зажмите кнопку или пробел — кости затрясутся в горсти. Отпустите, чтобы бросить!")
         self.tour.hide()
         self._next()
-        if not tour_done():  # самый первый заезд — покажем, что где
+        if not tour_done():
             QTimer.singleShot(450, self.start_tour)
 
     def start_tour(self):
@@ -763,7 +748,6 @@ class GameScreen(Screen):
              "вопрос знатока — за верный ответ +50 очков."),
         ])
 
-    # --- бросок игрока: зажать — потрясти, отпустить — бросить ---
     def _can_throw(self) -> bool:
         return (not self.busy and self.race is not None and not self.race.over
                 and self.race.current_rider.is_human and not self.quiz_box.isVisible()
@@ -785,7 +769,7 @@ class GameScreen(Screen):
         self.sounds.play("throw")
         self.dice.release(self._dice)
 
-    def keyPressEvent(self, e):  # пробел, когда кнопка не в фокусе
+    def keyPressEvent(self, e):
         if e.key() == Qt.Key_Space and not e.isAutoRepeat():
             self._press()
         else:
@@ -801,14 +785,13 @@ class GameScreen(Screen):
         if self._can_throw():
             self._throw()
 
-    def _throw(self):  # бросок без удержания: соперник или Enter
+    def _throw(self):
         self.busy = True
         self.throw_btn.setEnabled(False)
         self._dice = throw(self.rng)
         self.sounds.play("throw")
         self.dice.roll(self._dice, quick=not self.race.current_rider.is_human)
 
-    # --- ход ---
     @staticmethod
     def _leader(riders):
         top = sorted(riders, key=lambda r: -r.position)
@@ -911,7 +894,6 @@ class GameScreen(Screen):
                            f"Знания: {ok} / {asked}")
 
     def _save(self, h: Rider) -> tuple[int, int | None, str]:
-        """Считает очки игрока и сохраняет их в рекорды. -> (очки, id записи, текст о месте)."""
         race = self.race
         ok, _ = self.quiz[id(h)]
         score = calc_score(race.winner is h, h.progress, h.throws, len(race.riders) - 1, ok, race.length)
@@ -920,11 +902,9 @@ class GameScreen(Screen):
                             "place": race.place_of(h), "riders": len(race.riders),
                             "won": race.winner is h, "quiz_ok": ok, "quiz_asked": self.quiz[id(h)][1],
                             "hotseat": self.hot, "track": race.length})
-        return score, self.last_record_id, self.last_rank_text  # главное окно заполнило их
+        return score, self.last_record_id, self.last_rank_text
 
     def _celebrate(self, then) -> None:
-        """Финиш: конь пляшет в лучах, при победе человека — фанфары и дождь из хадаков,
-        через пару секунд — итоговое окно."""
         race = self.race
         human_won = race.winner.is_human
         self.track.set_drama(-1)
@@ -941,7 +921,7 @@ class GameScreen(Screen):
             if self.aborted or self.race is not race:
                 return
             then()
-            self.rain.raise_()  # хадаки летят и поверх итогового окна
+            self.rain.raise_()
         QTimer.singleShot(2200 if human_won else 1300, show)
 
     def _finish(self):
@@ -966,10 +946,9 @@ class GameScreen(Screen):
             self._celebrate(lambda: self.overlay.show_result(title, score, full, cert))
             return
 
-        # игра вместе: сохраняем каждого и показываем итоговую таблицу мест
         results = {id(h): self._save(h) for h in self.humans}
         best = results.get(id(win)) or max(results.values(), key=lambda r: r[0])
-        self.last_record_id = best[1]  # её подсветим в таблице рекордов
+        self.last_record_id = best[1]
         lines = []
         for place, r in enumerate(race.standings(), 1):
             if id(r) in results:
@@ -985,7 +964,7 @@ class GameScreen(Screen):
         self._celebrate(lambda: self.overlay.show_result(f"Победил {win.name}!", score, body, cert))
 
     def give_up(self):
-        if self.tour.isVisible():  # Esc при подсказках — просто закрыть их
+        if self.tour.isVisible():
             self.tour.close_tour()
             return
         if self.overlay.isVisible():
@@ -995,7 +974,7 @@ class GameScreen(Screen):
             if not ask(self, "Сдаться?", "Выйти в меню? Результат этого заезда не сохранится.",
                        "Сдаться и выйти", "Продолжить скачки"):
                 return
-        self.aborted = True  # останавливаем анимации и ходы компьютера
+        self.aborted = True
         self.quiz_box.hide()
         self.rain.stop()
         self.dice.reset()
@@ -1016,9 +995,7 @@ class GameScreen(Screen):
     hot = False
 
 
-# ======================= Рекорды =======================
 class NumItem(QTableWidgetItem):
-    """Ячейка, которая сортируется как число."""
 
     def __init__(self, value: int, text: str | None = None):
         super().__init__(text if text is not None else str(value))
@@ -1125,7 +1102,7 @@ class RecordsScreen(Screen):
         try:
             ranks = {r.id: i for i, r in enumerate(self.db.list(), 1)}
             rows = self.db.list(text)
-        except Exception as e:  # повреждённая БД, нет доступа к файлу и т.п.
+        except Exception as e:
             QMessageBox.critical(self, "Ошибка базы данных", f"Не удалось прочитать рекорды:\n{e}")
             return
         self.table.setSortingEnabled(False)

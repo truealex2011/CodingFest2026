@@ -1,4 +1,3 @@
-"""Карточка игрока: статистика заездов, график очков и витрина достижений."""
 from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -13,7 +12,6 @@ from .effects import draw_badge
 
 
 class ScoreChart(QWidget):
-    """Очки по заездам: столбики, лучший — красным, линия среднего пунктиром."""
 
     def __init__(self, scores: list[int]):
         super().__init__()

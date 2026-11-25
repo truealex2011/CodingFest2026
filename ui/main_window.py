@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         a.setEndValue(1.0)
         a.setDuration(280)
         a.setEasingCurve(QEasingCurve.OutCubic)
-        a.finished.connect(lambda: w.setGraphicsEffect(None))  # не тормозим отрисовку после перехода
+        a.finished.connect(lambda: w.setGraphicsEffect(None))
         a.start()
         self._anim = a
 
@@ -85,7 +85,6 @@ class MainWindow(QMainWindow):
                                            classic=r.get("track", 12) == 12))
 
     def grant(self, name: str, codes: list):
-        """Открывает достижения; новые показываются всплывающей карточкой со звоном."""
         for code in codes:
             try:
                 fresh = self.db.unlock(name, code)

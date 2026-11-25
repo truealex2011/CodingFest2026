@@ -1,4 +1,3 @@
-"""Подсказки при первом заезде: экран темнеет, нужный элемент подсвечен, рядом — облачко."""
 from __future__ import annotations
 
 import math
@@ -14,7 +13,7 @@ SETTINGS = ("ShagaiNaadan", "game")
 
 
 def tour_done() -> bool:
-    if os.environ.get("SHAGAI_NO_TOUR"):  # для автоматических проверок
+    if os.environ.get("SHAGAI_NO_TOUR"):
         return True
     try:
         return QSettings(*SETTINGS).value("tour_done", False, type=bool)
@@ -30,7 +29,6 @@ def mark_tour_done() -> None:
 
 
 class Tour(QWidget):
-    """steps: [(виджет, заголовок, текст)]. Перекрывает родителя и ловит все нажатия."""
     finished = Signal()
 
     def __init__(self, parent: QWidget):
@@ -105,7 +103,6 @@ class Tour(QWidget):
         r = self._target()
         bw, bh = self.bubble.width(), self.bubble.height()
         W, H = self.width(), self.height()
-        # облачко — над целью, если там есть место, иначе под ней или сбоку
         if r.top() - bh - 24 > 0:
             x, y = r.center().x() - bw / 2, r.top() - bh - 24
         elif r.bottom() + bh + 24 < H:
@@ -144,7 +141,7 @@ class Tour(QWidget):
         elif e.key() == Qt.Key_Escape:
             self.close_tour()
 
-    def mousePressEvent(self, e):  # щелчок мимо облачка — тоже «дальше»
+    def mousePressEvent(self, e):
         self._advance()
 
     def paintEvent(self, _):
@@ -156,12 +153,10 @@ class Tour(QWidget):
         cut = QPainterPath()
         cut.addRoundedRect(hole, 10, 10)
         p.fillPath(shade.subtracted(cut), QColor(30, 27, 24, 175))
-        # пульсирующая охристая рамка вокруг цели
         grow = 3 + 3 * math.sin(self._t * 5)
         p.setPen(QPen(QColor(T.OCHRE), 4))
         p.setBrush(Qt.NoBrush)
         p.drawRoundedRect(hole.adjusted(-grow, -grow, grow, grow), 12, 12)
-        # стрелка от облачка к цели
         b = self.bubble.geometry()
         bc = QPointF(b.center().x(), b.bottom() if b.bottom() < hole.top() else b.top())
         if b.right() < hole.left():

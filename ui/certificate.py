@@ -1,4 +1,3 @@
-"""Сертификат победителя: рисуется кодом (QPainter) и сохраняется в PNG или PDF формата A4."""
 from __future__ import annotations
 
 import math
@@ -16,7 +15,7 @@ from . import theme as T
 from .widgets import plural, points_txt, throws_txt
 from .art import draw_horse_token, draw_ornament_band, draw_shagai, grain_tile, ui_font
 
-W, H = 1754, 1240  # A4 альбомный, 150 точек на дюйм
+W, H = 1754, 1240
 
 
 @dataclass
@@ -35,7 +34,6 @@ class CertData:
 
 
 def _corner(p: QPainter, c: QPointF, s: float) -> None:
-    """Угловой знак: ромб с «узлом» внутри."""
     path = QPainterPath(QPointF(c.x(), c.y() - s))
     for dx, dy in ((s, 0), (0, s), (-s, 0)):
         path.lineTo(c.x() + dx, c.y() + dy)
@@ -48,7 +46,6 @@ def _corner(p: QPainter, c: QPointF, s: float) -> None:
 
 
 def _seal(p: QPainter, c: QPointF, r: float) -> None:
-    """Печать: охристый круг с зубчатым краем и конём в центре."""
     path = QPainterPath()
     n = 36
     for k in range(n * 2 + 1):
@@ -79,7 +76,6 @@ def paint_certificate(p: QPainter, d: CertData) -> None:
     p.fillRect(full, QColor(T.PAPER_LIGHT))
     p.drawTiledPixmap(full, grain_tile())
 
-    # рамка: синяя кайма с меандром, внутри — тонкая чернильная линия
     m = 46
     band = 44
     p.setPen(Qt.NoPen)
@@ -138,7 +134,6 @@ def paint_certificate(p: QPainter, d: CertData) -> None:
     p.setFont(ui_font(32))
     p.drawText(QRectF(cx - 660, y, 1320, 140), Qt.AlignHCenter | Qt.AlignTop | Qt.TextWordWrap, text)
 
-    # низ: кости слева, подпись и дата посередине, печать справа
     by = inner.bottom() - 150
     for k, side in enumerate((Side.HONIN, Side.YAMAAN, Side.MORIN, Side.TEMEEN)):
         draw_shagai(p, QPointF(inner.left() + 120 + k * 92, by + 10), 74, side, (-1) ** k * 12,
@@ -154,7 +149,7 @@ def paint_certificate(p: QPainter, d: CertData) -> None:
         if val:
             p.setFont(ui_font(34, title=True))
             p.drawText(QRectF(x, by - 20, 260, 46), Qt.AlignCenter, val)
-        else:  # росчерк судьи
+        else:
             sig = QPainterPath(QPointF(x + 40, by + 18))
             sig.cubicTo(x + 80, by - 40, x + 110, by + 40, x + 140, by - 6)
             sig.cubicTo(x + 160, by - 30, x + 180, by + 26, x + 225, by - 10)
@@ -188,7 +183,6 @@ def save(d: CertData, path: str) -> None:
 
 
 def ask_and_save(parent: QWidget, d: CertData) -> None:
-    """Диалог «Сохранить как», запись файла и открытие его в программе просмотра."""
     default = str(Path.home() / f"Сертификат_{d.name.replace(' ', '_')}.png")
     path, _ = QFileDialog.getSaveFileName(parent, "Сохранить сертификат", default,
                                           "Картинка PNG (*.png);;Документ PDF (*.pdf)")

@@ -1,4 +1,3 @@
-"""Звуки. Если QtMultimedia недоступен или нет аудиоустройства — игра идёт молча."""
 from pathlib import Path
 
 from PySide6.QtCore import QUrl
@@ -11,7 +10,7 @@ try:
     if os.environ.get("SHAGAI_NO_SOUND"):
         raise ImportError
     from PySide6.QtMultimedia import QSoundEffect
-except Exception:  # pragma: no cover — нет модуля мультимедиа
+except Exception:
     QSoundEffect = None
 
 
@@ -44,7 +43,6 @@ class Sounds:
                     pass
 
     def set_music(self, on: bool) -> None:
-        """Фоновая мелодия по кругу. Если музыки нет — тихо ничего не делаем."""
         self.music_on = on
         if self.music is None:
             return

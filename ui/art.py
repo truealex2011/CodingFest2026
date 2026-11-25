@@ -1,6 +1,3 @@
-"""Вся графика рисуется кодом (QPainter): орнамент, шагай, кони, ипподром.
-Никаких внешних картинок — приложение не сломается из-за потерянного файла.
-Стиль — плоская печать: заливка, чёткая обводка, жёсткая тень без размытия."""
 from __future__ import annotations
 
 import random
@@ -20,12 +17,10 @@ def ui_font(size: float, bold: bool = False, title: bool = False) -> QFont:
     return f
 
 
-# ---------- фактура войлока ----------
 _grain: QPixmap | None = None
 
 
 def grain_tile() -> QPixmap:
-    """Тайл с мелкими «ворсинками» — фон перестаёт быть стерильно-гладким."""
     global _grain
     if _grain is None:
         rnd = random.Random(7)
@@ -40,10 +35,8 @@ def grain_tile() -> QPixmap:
     return _grain
 
 
-# ---------- орнамент «алхан хээ» (молоточковый узор) ----------
 def draw_ornament_band(p: QPainter, rect: QRectF, color: str = T.PAPER_LIGHT, step: float | None = None,
                        lines: bool = True) -> None:
-    """Повторяющийся меандр — классическая бурятско-монгольская кайма."""
     h = rect.height()
     s = step or h
     pen = QPen(QColor(color), max(1.5, h / 8), Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
@@ -81,7 +74,6 @@ def paint_background(p: QPainter, rect: QRectF, band: bool = True) -> None:
 
 
 class OrnamentBackground(QWidget):
-    """Базовый экран: войлок с синей каймой сверху."""
     band = True
 
     def __init__(self, parent=None):
@@ -94,9 +86,7 @@ class OrnamentBackground(QWidget):
         paint_background(p, QRectF(self.rect()), self.band)
 
 
-# ---------- шагай ----------
 def _bone_path(w: float, h: float) -> QPainterPath:
-    """Силуэт бараньей лодыжки: тело с двумя «перетяжками» по бокам."""
     path = QPainterPath()
     path.moveTo(-w * 0.42, -h * 0.5)
     path.cubicTo(-w * 0.1, -h * 0.62, w * 0.1, -h * 0.38, w * 0.42, -h * 0.5)
@@ -111,13 +101,11 @@ def _bone_path(w: float, h: float) -> QPainterPath:
 def draw_shagai(p: QPainter, center: QPointF, size: float, side: Side,
                 angle: float = 0.0, glow: bool = False, shadow: QColor | None = None,
                 lift: float = 0.0, scale: float = 1.0) -> None:
-    """glow — выделить кость плоской охристой «наклейкой» под ней (для «коня»).
-    lift — высота кости над войлоком в полёте: тень остаётся на земле и бледнеет."""
     if side in (Side.HONIN, Side.YAMAAN):
         w, h = size, size * 0.78
     elif side is Side.MORIN:
         w, h = size * 0.62, size * 0.9
-    else:  # TEMEEN
+    else:
         w, h = size * 0.55, size * 0.62
     path = _bone_path(w, h)
     lw = max(1.3, size / 30)
@@ -131,7 +119,6 @@ def draw_shagai(p: QPainter, center: QPointF, size: float, side: Side,
         p.drawEllipse(QPointF(0, 0), r, r)
         p.restore()
 
-    # жёсткая тень — та же форма со сдвигом, без размытия
     sc = QColor(shadow if shadow is not None else QColor(30, 27, 24, 55))
     if lift > 0:
         sc.setAlpha(int(sc.alpha() * max(0.35, 1 - lift / 220)))
@@ -152,7 +139,6 @@ def draw_shagai(p: QPainter, center: QPointF, size: float, side: Side,
     if s != 1:
         p.scale(s, s)
 
-    # тело: тёмный «полутон» снизу-справа, светлая кость поверх со сдвигом
     p.setPen(Qt.NoPen)
     p.setBrush(QColor(T.BONE_SHADE))
     p.drawPath(path)
@@ -167,25 +153,24 @@ def draw_shagai(p: QPainter, center: QPointF, size: float, side: Side,
 
     detail = QPen(QColor(T.BONE_LINE), lw, Qt.SolidLine, Qt.RoundCap)
     p.setPen(detail)
-    if side is Side.HONIN:      # выпуклая — гладкий бугор
+    if side is Side.HONIN:
         p.drawArc(QRectF(-w * 0.3, -h * 0.25, w * 0.6, h * 0.5), 200 * 16, 140 * 16)
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(255, 255, 255, 170))
         p.drawEllipse(QPointF(-w * 0.14, -h * 0.14), w * 0.13, h * 0.08)
-    elif side is Side.YAMAAN:   # вогнутая — углубление
+    elif side is Side.YAMAAN:
         p.setBrush(QColor(T.BONE_SHADE))
         p.drawEllipse(QPointF(0, 0), w * 0.22, h * 0.2)
-    elif side is Side.MORIN:    # боком — S-образный гребень
+    elif side is Side.MORIN:
         sp = QPainterPath(QPointF(0, -h * 0.38))
         sp.cubicTo(w * 0.3, -h * 0.15, -w * 0.3, h * 0.15, 0, h * 0.38)
         p.drawPath(sp)
-    else:                       # на торце — маленькая площадка
+    else:
         p.setBrush(QColor(T.BONE_SHADE))
         p.drawRect(QRectF(-w * 0.2, -h * 0.18, w * 0.4, h * 0.36))
     p.restore()
 
 
-# ---------- конь-фишка ----------
 def draw_horse_token(p: QPainter, center: QPointF, r: float, color: str, label: str,
                      bob: float = 0.0, highlight: bool = False) -> None:
     p.save()
@@ -195,7 +180,6 @@ def draw_horse_token(p: QPainter, center: QPointF, r: float, color: str, label: 
         p.setPen(QPen(QColor(T.INK), lw))
         p.setBrush(QColor(T.OCHRE))
         p.drawEllipse(QPointF(0, -r * 0.1), r * 1.25, r * 1.25)
-    # голова коня — стилизованный силуэт
     head = QPainterPath()
     head.moveTo(-r * 0.55, r * 0.8)
     head.cubicTo(-r * 0.7, 0, -r * 0.4, -r * 0.75, r * 0.05, -r * 0.9)
@@ -211,7 +195,6 @@ def draw_horse_token(p: QPainter, center: QPointF, r: float, color: str, label: 
     p.setBrush(QColor(color))
     p.setPen(QPen(QColor(T.INK), lw, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
     p.drawPath(head)
-    # грива
     p.setPen(QPen(QColor(T.INK), lw, Qt.SolidLine, Qt.RoundCap))
     for k in range(4):
         y = -r * 0.7 + k * r * 0.3
@@ -219,7 +202,6 @@ def draw_horse_token(p: QPainter, center: QPointF, r: float, color: str, label: 
     p.setBrush(QColor(T.INK))
     p.setPen(Qt.NoPen)
     p.drawEllipse(QPointF(r * 0.35, -r * 0.45), r * 0.09, r * 0.09)
-    # подпись
     p.setFont(ui_font(max(11, r * 0.55), bold=True))
     p.setPen(QColor(T.INK))
     p.drawText(QRectF(-r * 3, r * 0.95, r * 6, r * 0.9), Qt.AlignCenter, label)

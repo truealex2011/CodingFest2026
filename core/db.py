@@ -1,4 +1,3 @@
-"""Таблица рекордов в SQLite (встроена в Python, сервер не нужен)."""
 from __future__ import annotations
 
 import csv
@@ -22,15 +21,13 @@ CREATE TABLE IF NOT EXISTS records (
 CREATE INDEX IF NOT EXISTS idx_records_name  ON records(name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_records_score ON records(score DESC);
 
--- достижения игроков: одно достижение на игрока один раз
 CREATE TABLE IF NOT EXISTS achievements (
-    player     TEXT NOT NULL,      -- имя в нижнем регистре
+    player     TEXT NOT NULL,
     code       TEXT NOT NULL,
     unlocked_at TEXT NOT NULL,
     PRIMARY KEY (player, code)
 );
 
--- результаты мини-игры «Шагай харбаха» (щелчки)
 CREATE TABLE IF NOT EXISTS harbaha (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     name       TEXT    NOT NULL,
@@ -64,7 +61,6 @@ class RecordsDB:
     def close(self) -> None:
         self.conn.close()
 
-    # --- CRUD ---
     def add(self, name: str, score: int, throws: int, place: int, riders: int) -> int:
         name = validate_name(name)
         with self.conn:
@@ -94,8 +90,6 @@ class RecordsDB:
             self.conn.execute("DELETE FROM records")
 
     def list(self, name_filter: str = "") -> list[Record]:
-        """Все записи по убыванию очков; фильтр — подстрока имени без учёта регистра
-        (работает и для кириллицы, в отличие от LIKE в SQLite)."""
         sql = "SELECT * FROM records"
         args: tuple = ()
         f = " ".join(name_filter.split()).lower()
@@ -111,16 +105,12 @@ class RecordsDB:
                 return i
         return None
 
-    # --- карточка игрока ---
     def player_records(self, name: str) -> list[Record]:
-        """Все заезды игрока (имя целиком, без учёта регистра) в порядке времени."""
         key = " ".join(name.split()).lower()
         rows = self.conn.execute("SELECT * FROM records WHERE PYLOWER(name) = ? ORDER BY id", (key,))
         return [Record(**dict(r)) for r in rows]
 
-    # --- достижения ---
     def unlock(self, name: str, code: str) -> bool:
-        """Открывает достижение. True — если оно новое."""
         key = " ".join(name.split()).lower()
         with self.conn:
             cur = self.conn.execute(
@@ -129,12 +119,10 @@ class RecordsDB:
         return cur.rowcount == 1
 
     def achievements(self, name: str) -> dict[str, str]:
-        """{код: дата открытия} для игрока."""
         key = " ".join(name.split()).lower()
         rows = self.conn.execute("SELECT code, unlocked_at FROM achievements WHERE player = ?", (key,))
         return {r["code"]: r["unlocked_at"] for r in rows}
 
-    # --- «Шагай харбаха» ---
     def add_harbaha(self, name: str, score: int, hits: int) -> int:
         name = validate_name(name)
         with self.conn:

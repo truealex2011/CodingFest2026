@@ -1,4 +1,3 @@
-"""Эффекты: дождь из хадаков на победу, всплывающее достижение, значки достижений."""
 from __future__ import annotations
 
 import math
@@ -21,7 +20,6 @@ class _Hadak:
 
 
 class HadakRain(QWidget):
-    """Хадаки — праздничные шарфы — падают, кружатся и колышутся. Мышь проходит насквозь."""
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -67,7 +65,6 @@ class HadakRain(QWidget):
     def _tick(self) -> None:
         dt = 0.016
         self._t += dt
-        # первые полсекунды — залп, дальше реже
         burst = 6 if self._t < 0.5 else 1
         for _ in range(burst):
             if self._left > 0 and self._rnd.random() < 0.5:
@@ -90,7 +87,6 @@ class HadakRain(QWidget):
             p.save()
             p.translate(h.x + math.sin(h.phase) * h.sway, h.y)
             p.rotate(h.a)
-            # лента: средняя линия колышется волной, края параллельны
             n = 14
             left, right = [], []
             for i in range(n + 1):
@@ -103,7 +99,6 @@ class HadakRain(QWidget):
             p.setPen(QPen(QColor(T.INK), 1.6))
             p.setBrush(QColor(h.color))
             p.drawPolygon(poly)
-            # бахрома на концах
             p.setPen(QPen(QColor(T.INK), 1))
             for a, b, sign in ((left[0], right[0], -1), (left[-1], right[-1], 1)):
                 for k in range(5):
@@ -113,7 +108,6 @@ class HadakRain(QWidget):
             p.restore()
 
 
-# ---------- значки достижений ----------
 def _icon(p: QPainter, c: QPointF, r: float, icon: str) -> None:
     ink = QPen(QColor(T.INK), max(2.0, r / 9), Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
     if icon == "horse":
@@ -164,14 +158,13 @@ def _icon(p: QPainter, c: QPointF, r: float, icon: str) -> None:
         path.lineTo(c.x() - r * 0.1, c.y() + r * 0.3)
         path.lineTo(c.x() + r * 0.45, c.y() - r * 0.35)
         p.drawPath(path)
-    else:  # ten
+    else:
         p.setPen(QColor(T.INK))
         p.setFont(ui_font(r * 0.9, title=True))
         p.drawText(QRectF(c.x() - r, c.y() - r, 2 * r, 2 * r), Qt.AlignCenter, "10")
 
 
 def draw_badge(p: QPainter, c: QPointF, r: float, icon: str, unlocked: bool = True) -> None:
-    """Медаль: охристый круг, кольцо с насечками-«орнаментом», значок в центре."""
     p.save()
     p.setPen(Qt.NoPen)
     p.setBrush(QColor(30, 27, 24, 70))
@@ -181,12 +174,12 @@ def draw_badge(p: QPainter, c: QPointF, r: float, icon: str, unlocked: bool = Tr
     p.drawEllipse(c, r, r)
     p.setBrush(Qt.NoBrush)
     p.drawEllipse(c, r * 0.8, r * 0.8)
-    for k in range(16):  # насечки между кольцами
+    for k in range(16):
         a = k * math.pi / 8
         p.drawLine(QPointF(c.x() + math.cos(a) * r * 0.84, c.y() + math.sin(a) * r * 0.84),
                    QPointF(c.x() + math.cos(a) * r * 0.94, c.y() + math.sin(a) * r * 0.94))
     _icon(p, c, r * 0.72, icon)
-    if not unlocked:  # закрытое — бледное, с замочком-вопросом
+    if not unlocked:
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(239, 230, 211, 175))
         p.drawEllipse(c, r * 0.8, r * 0.8)
@@ -197,7 +190,6 @@ def draw_badge(p: QPainter, c: QPointF, r: float, icon: str, unlocked: bool = Tr
 
 
 class AchievementToast(QWidget):
-    """Карточка «Достижение открыто!» выезжает справа сверху. Несколько — по очереди."""
     W, H = 360, 96
 
     def __init__(self, parent: QWidget):
@@ -211,7 +203,7 @@ class AchievementToast(QWidget):
         self._anim.valueChanged.connect(self._place)
         self._anim.finished.connect(self._step)
         self._phase = ""
-        self.on_show = None  # колбэк для звука
+        self.on_show = None
 
     def push(self, ach: Achievement, who: str) -> None:
         self.queue.append((ach, who))

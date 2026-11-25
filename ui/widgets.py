@@ -1,4 +1,3 @@
-"""Игровые виджеты: бросок шагай с физикой, ипподром, украшение меню."""
 from __future__ import annotations
 
 import math
@@ -15,7 +14,6 @@ from .art import draw_horse_token, draw_ornament_band, draw_shagai, ui_font
 
 
 def plural(n: int, one: str, few: str, many: str) -> str:
-    """Склонение по числу: 1 бросок, 2 броска, 5 бросков."""
     n = abs(int(n))
     if n % 10 == 1 and n % 100 != 11:
         return one
@@ -41,32 +39,24 @@ def horses_word(n: int) -> str:
 
 
 class _Bone:
-    """Одна кость в полёте: положение на войлоке (x, y), высота z, скорости и вращение."""
     __slots__ = ("x", "y", "z", "vx", "vy", "vz", "a", "spin", "side", "landed", "pop")
 
     def __init__(self):
         self.x = self.y = self.z = self.vx = self.vy = self.vz = self.a = self.spin = 0.0
         self.side = Side.HONIN
         self.landed = True
-        self.pop = 0.0  # 0 — нет, (0..1) — «подпрыгивает», 1 — показан как конь
+        self.pop = 0.0
 
 
 class DiceWidget(QWidget):
-    """Пять шагай на войлоке.
-
-    Зажали кнопку — кости трясутся в горсти, растёт сила броска. Отпустили — летят,
-    отскакивают от войлока и друг от друга, кувыркаются и останавливаются.
-    Затем «кони» по одному подпрыгивают, появляется итог, и после паузы — сигнал rolled.
-    Исход броска задаётся заранее (логика в core.shagai), физика только показывает его.
-    """
     rolled = Signal()
     popped = Signal()
 
     IDLE, SHAKE, FLY, REVEAL, HOLD = range(5)
-    G = 1500.0          # «гравитация», пикс/с²
-    HOLD_TIME = 1.35    # пауза, чтобы рассмотреть бросок, с
+    G = 1500.0
+    HOLD_TIME = 1.35
     POP_EVERY = 0.32
-    LIFT_VIEW = 0.5     # видимая высота полёта: вид на войлок сверху и чуть сбоку
+    LIFT_VIEW = 0.5
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -77,7 +67,7 @@ class DiceWidget(QWidget):
         self.bones = [_Bone() for _ in range(DICE_COUNT)]
         for b, s in zip(self.bones, (Side.HONIN, Side.YAMAAN, Side.MORIN, Side.TEMEEN, Side.HONIN)):
             b.side = s
-        self._fresh = True      # кости ещё лежат ровным рядом
+        self._fresh = True
         self.state = self.IDLE
         self.power = 0.0
         self._final: list[Side] = []
@@ -93,7 +83,6 @@ class DiceWidget(QWidget):
         self._timer.setInterval(16)
         self._timer.timeout.connect(self._tick)
 
-    # ---------- геометрия ----------
     def _mat(self) -> QRectF:
         return QRectF(self.rect()).adjusted(2, 2, -8, -8)
 
@@ -115,7 +104,7 @@ class DiceWidget(QWidget):
         super().resizeEvent(e)
         if self._fresh:
             self._lay_row()
-        else:  # не даём костям оказаться за краем коврика
+        else:
             a, size = self._area(), self._size()
             for b in self.bones:
                 b.x = min(max(b.x, a.left() + size * 0.45), a.right() - size * 0.45)
@@ -125,7 +114,6 @@ class DiceWidget(QWidget):
     def busy(self) -> bool:
         return self.state != self.IDLE
 
-    # ---------- управление ----------
     def start_shake(self) -> bool:
         if self.state != self.IDLE:
             return False
@@ -162,7 +150,6 @@ class DiceWidget(QWidget):
         self.state, self._t = self.FLY, 0.0
 
     def reset(self) -> None:
-        """Прервать бросок (выход из заезда): никаких запоздалых сигналов в новую игру."""
         self._timer.stop()
         self._token += 1
         self.state, self.banner = self.IDLE, ""
@@ -171,15 +158,12 @@ class DiceWidget(QWidget):
         self.update()
 
     def roll(self, final: list[Side], quick: bool = False) -> None:
-        """Бросок без удержания (соперник или Enter): короткая «тряска» и бросок.
-        quick — бросок соперника: пауза на рассматривание короче, чтобы не ждать."""
         if self.start_shake():
             self._hold = self.HOLD_TIME * (0.6 if quick else 1)
             hold = self._rnd.randint(250, 450) if not self.fast else 150
             token = self._token
             QTimer.singleShot(hold, lambda: token == self._token and self.release(final))
 
-    # ---------- кадр ----------
     def _tick(self) -> None:
         dt = min(0.04, self._clock.restart() / 1000)
         if self.fast:
@@ -225,7 +209,7 @@ class DiceWidget(QWidget):
             if not b.landed:
                 b.vz -= self.G * dt
                 b.z += b.vz * dt
-                if b.z <= 0 and b.vz < 0:  # удар о войлок
+                if b.z <= 0 and b.vz < 0:
                     b.z = 0.0
                     if -b.vz < 110:
                         b.vz, b.landed, b.side = 0.0, True, self._final[i]
@@ -235,12 +219,11 @@ class DiceWidget(QWidget):
                     b.vx *= 0.7
                     b.vy *= 0.7
                     b.spin *= 0.55
-            else:  # скользит по войлоку
+            else:
                 f = max(0.0, 1 - 5 * dt)
                 b.vx *= f
                 b.vy *= f
                 b.spin *= max(0.0, 1 - 6 * dt)
-            # бортики коврика
             if b.x < lo_x:
                 b.x, b.vx = lo_x, abs(b.vx) * 0.5
             elif b.x > hi_x:
@@ -262,7 +245,6 @@ class DiceWidget(QWidget):
             self.state, self._t = self.REVEAL, 0.0
 
     def _collide(self, size: float) -> None:
-        """Кости расталкивают друг друга и обмениваются скоростью, как упругие шары."""
         md = size * 0.82
         bs = self.bones
         for i in range(len(bs)):
@@ -307,12 +289,10 @@ class DiceWidget(QWidget):
             self._banner_t = 0.0
             self.state, self._t = self.HOLD, 0.0
 
-    # ---------- рисование ----------
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         r = self._mat()
-        # войлочный коврик: жёсткая тень, плоская заливка, кайма только сверху
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(T.INK))
         p.drawRoundedRect(r.translated(6, 6), 6, 6)
@@ -322,7 +302,7 @@ class DiceWidget(QWidget):
         draw_ornament_band(p, QRectF(r.left() + 2, r.top() + 10, r.width() - 4, 14), T.OCHRE, lines=False)
         size = self._size()
 
-        if self.state == self.SHAKE:  # кольцо силы броска вокруг горсти
+        if self.state == self.SHAKE:
             rad = size * 1.05
             box = QRectF(self._cluster.x() - rad, self._cluster.y() - rad, rad * 2, rad * 2)
             p.setBrush(Qt.NoBrush)
@@ -332,7 +312,7 @@ class DiceWidget(QWidget):
             p.drawArc(box, 90 * 16, int(-self.power * 360 * 16))
 
         p.save()
-        p.setClipRect(r.adjusted(2, 2, -2, -2))  # кость в полёте не вылетает за коврик
+        p.setClipRect(r.adjusted(2, 2, -2, -2))
         show_labels = self.state in (self.HOLD, self.IDLE) and bool(self.banner)
         for b in sorted(self.bones, key=lambda b: b.y):
             sc = 1 + 0.32 * math.sin(math.pi * b.pop) if 0 < b.pop < 1 else 1.0
@@ -347,9 +327,9 @@ class DiceWidget(QWidget):
 
         p.restore()
 
-        if self.banner:  # итог броска — табличка поверх каймы
+        if self.banner:
             k = min(1.0, self._banner_t / 0.22) if self.state == self.HOLD else 1.0
-            sc = 1 + 0.35 * (1 - k) * math.cos(k * math.pi * 1.5)  # «пружинка»
+            sc = 1 + 0.35 * (1 - k) * math.cos(k * math.pi * 1.5)
             p.save()
             p.translate(r.center().x(), r.top() + 22)
             p.scale(sc, sc)
@@ -370,9 +350,8 @@ class DiceWidget(QWidget):
 
 
 class TrackWidget(QWidget):
-    """Ипподром: ряд из 12 шагай, по дорожке для каждого всадника."""
     moved = Signal()
-    hop = Signal()  # конь перескочил очередную кость — для стука копыт
+    hop = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -388,12 +367,10 @@ class TrackWidget(QWidget):
         self._phase = 0.0
         self._anim: QVariantAnimation | None = None
         self.fast = False
-        # «решающий бросок»: камера наезжает на коня в шаге от финиша
         self.drama = -1
         self.zoom = 1.0
         self._zoom_anim = QVariantAnimation(self)
         self._zoom_anim.valueChanged.connect(self._set_zoom)
-        # победа: конь пляшет на финише в лучах солнца
         self.winner = -1
         self._cel_t = 0.0
         self._cel = QTimer(self)
@@ -402,7 +379,7 @@ class TrackWidget(QWidget):
 
     def stop(self) -> None:
         if self._anim is not None:
-            self._anim.stop()  # stop() не шлёт finished — ход не «доиграется» в новой игре
+            self._anim.stop()
         self.moving = -1
         self._cel.stop()
         self.winner = -1
@@ -460,7 +437,7 @@ class TrackWidget(QWidget):
         a = QVariantAnimation(self)
         a.setStartValue(start)
         a.setEndValue(float(new_pos))
-        slow = 1.7 if self.drama == idx else 1.0  # решающий бросок — в замедлении
+        slow = 1.7 if self.drama == idx else 1.0
         a.setDuration(int((240 if self.fast else 460) * slow * (new_pos - start) + 150))
         a.setEasingCurve(QEasingCurve.Linear)
 
@@ -469,7 +446,7 @@ class TrackWidget(QWidget):
         def step(v):
             self.pos[idx] = float(v)
             done = float(v) - start
-            self._phase = done * math.pi  # один прыжок на каждую кость
+            self._phase = done * math.pi
             if int(done + 0.5) > hops[0]:
                 hops[0] = int(done + 0.5)
                 self.hop.emit()
@@ -514,13 +491,11 @@ class TrackWidget(QWidget):
             p.scale(self.zoom, self.zoom)
             p.translate(-focus)
 
-        # подписи старта/финиша
         p.setFont(ui_font(13, title=True))
         p.setPen(QColor(T.INK_SOFT))
         p.drawText(QRectF(r.left() + 14, r.top() + 8, 120, 18), Qt.AlignLeft, "СТАРТ")
         p.drawText(QRectF(r.right() - 134, r.top() + 8, 120, 18), Qt.AlignRight, "ФИНИШ")
 
-        # 12 костей ипподрома
         num_font = ui_font(11, bold=True)
         for k in range(1, self.length + 1):
             x = self._x(r, k)
@@ -529,7 +504,6 @@ class TrackWidget(QWidget):
             p.setFont(num_font)
             p.drawText(QRectF(x - 12, bone_y + 13, 24, 14), Qt.AlignCenter, str(k))
 
-        # дорожки: чередующиеся полосы, текущая — охрой
         p.setPen(QPen(QColor(T.INK), 2))
         p.drawLine(QPointF(r.left(), lane_top), QPointF(r.right(), lane_top))
         fx = self._x(r, self.finish)
@@ -541,7 +515,6 @@ class TrackWidget(QWidget):
             else:
                 c = QColor(0, 0, 0, 14 if i % 2 else 0)
             p.fillRect(lane, c)
-            # цветная метка дорожки слева
             p.fillRect(QRectF(lane.left(), lane.top(), 6, lane.height()), QColor(self.colors[i]))
             if i:
                 p.setPen(QPen(QColor(T.INK), 1))
@@ -549,7 +522,6 @@ class TrackWidget(QWidget):
             p.setPen(QPen(QColor(30, 27, 24, 60), 1, Qt.DashLine))
             p.drawLine(QPointF(self._x(r, START), lane.center().y()), QPointF(fx, lane.center().y()))
 
-        # финишная линия — клетчатая, чернилами
         cell = 7
         y = lane_top + 1
         i = 0
@@ -560,7 +532,6 @@ class TrackWidget(QWidget):
             y += cell
             i += 1
 
-        # в решающий бросок остальные дорожки приглушаются
         if self.drama >= 0:
             k = min(1.0, (self.zoom - 1) / 0.28)
             for i in range(len(self.riders)):
@@ -568,7 +539,6 @@ class TrackWidget(QWidget):
                     p.fillRect(QRectF(r.left(), lane_top + lane_h * i, r.width(), lane_h),
                                QColor(30, 27, 24, int(45 * k)))
 
-        # кони
         for i, rider in enumerate(self.riders):
             lane = QRectF(r.left(), lane_top + lane_h * i, r.width(), lane_h)
             rad = min(lane_h * 0.3, 24)
@@ -612,7 +582,6 @@ class TrackWidget(QWidget):
         p.restore()
 
     def _ribbon(self, p: QPainter, top: QPointF, text: str, color: str, k: float) -> None:
-        """Табличка-объявление над ипподромом, выпрыгивает «пружинкой»."""
         if k <= 0:
             return
         p.save()
@@ -635,7 +604,6 @@ class TrackWidget(QWidget):
 
 
 class FloatingBones(QWidget):
-    """«Плакат» главного меню: синее поле, четыре стороны шагая 2×2 с подписями."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -660,7 +628,6 @@ class FloatingBones(QWidget):
         p.setPen(QPen(QColor(T.INK), 2))
         p.setBrush(QColor(T.BLUE))
         p.drawRect(r)
-        # кайма снизу и тонкая рамка-паспарту
         draw_ornament_band(p, QRectF(r.left() + 1, r.bottom() - 30, r.width() - 2, 18), T.PAPER_LIGHT)
         inner = r.adjusted(16, 16, -16, -46)
         p.setPen(QPen(QColor(248, 243, 232, 90), 1))

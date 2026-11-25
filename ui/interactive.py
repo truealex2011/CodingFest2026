@@ -1,7 +1,3 @@
-"""Интерактивные «Правила» и «Об игре и народе»: не читать, а трогать.
-
-Карточки переворачиваются, кости бросаются, клавиши загораются, ёхор танцует.
-"""
 from __future__ import annotations
 
 import math
@@ -21,10 +17,8 @@ from .screens import Screen, button, label
 from .widgets import DiceWidget, TrackWidget, horses_word, plural, points_txt, throws_txt
 
 
-# ====================== карточка-перевёртыш ======================
 def fit_text(p: QPainter, rect: QRectF, text: str, flags, start: float, smallest: float = 11,
              title: bool = False) -> None:
-    """Рисует текст самым крупным шрифтом, при котором он целиком влезает в прямоугольник."""
     size = start
     while size > smallest:
         p.setFont(ui_font(size, title=title))
@@ -37,14 +31,12 @@ def fit_text(p: QPainter, rect: QRectF, text: str, flags, start: float, smallest
 
 
 class FlipCard(QWidget):
-    """Лицо: значок и название. Нажали — карточка переворачивается и показывает рассказ.
-    Размер тянется под окно (w, h — «удобный» размер), шрифты подбираются под карточку."""
     flipped = Signal(bool)
 
     def __init__(self, title: str, sub: str, back_title: str, back_text: str, icon=None,
                  back_color: str = T.BLUE, w: int = 184, h: int = 236, wide: bool = False):
         super().__init__()
-        self.wide = wide  # значок слева, текст справа — для низких карточек
+        self.wide = wide
         self.title, self.sub, self.back_title, self.back_text = title, sub, back_title, back_text
         self.icon, self.back_color = icon, back_color
         self.setMinimumSize(int(w * 0.7), int(h * 0.62))
@@ -52,7 +44,7 @@ class FlipCard(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setCursor(Qt.PointingHandCursor)
         self.setToolTip("Нажмите, чтобы перевернуть")
-        self.v = 0.0          # 0 — лицом, 1 — оборотом
+        self.v = 0.0
         self.seen = False
         self._hover = False
         self._a = QVariantAnimation(self)
@@ -123,7 +115,7 @@ class FlipCard(QWidget):
                 self.icon(p, QPointF(r.center().x(), r.top() + H * 0.33), min(W, H) * 0.24)
                 ty = r.top() + H * 0.6
             th, sh = H * 0.17, H * 0.14
-            if not self.icon:  # карточка без значка — крупная подпись по центру
+            if not self.icon:
                 th, sh = H * 0.36, H * 0.18
                 ty = r.center().y() - th * 0.75
             p.setPen(QColor(T.INK))
@@ -167,7 +159,6 @@ def horse_icon(color: str = T.RED):
 
 
 class Progress(QLabel):
-    """«Открыто 2 из 4» — маленькая цель на странице. done — цель выполнена."""
     done = Signal()
 
     def __init__(self, total: int, what: str, done_text: str):
@@ -212,7 +203,6 @@ def card_row(cards: list[FlipCard], prog: Progress | None = None, cols: int | No
     return w
 
 
-# ====================== книга с шагами ======================
 class Page(QWidget):
     def __init__(self, over: str, title: str, lead: str):
         super().__init__()
@@ -244,7 +234,6 @@ class Page(QWidget):
 
 
 class Sidebar(QWidget):
-    """Синяя полоса слева: название раздела, шаги, внизу — рисунок с шагаями и кайма."""
 
     def __init__(self):
         super().__init__()
@@ -264,7 +253,7 @@ class Sidebar(QWidget):
         band = QRectF(r.left(), r.bottom() - 34, r.width(), 22)
         draw_ornament_band(p, band, T.PAPER_LIGHT, lines=False)
         room = band.top() - self.art_top
-        if room > 150:  # рисунок, если осталось место: четыре стороны шагая
+        if room > 150:
             size = min(64.0, room * 0.3, r.width() * 0.2)
             cy = self.art_top + room * 0.5
             for k, side in enumerate((Side.HONIN, Side.YAMAAN, Side.MORIN, Side.TEMEEN)):
@@ -286,10 +275,9 @@ QPushButton#side:hover {{ color: {T.PAPER_LIGHT}; text-decoration: underline; }}
 
 
 class StepBook(Screen):
-    """Экран-книга: синяя панель с шагами слева, интерактивная страница справа."""
 
     def __init__(self, title: str, subtitle: str, pages: list[tuple[str, Page]], final_text: str, final_target):
-        super().__init__()  # без стандартной шапки — заголовок живёт в боковой панели
+        super().__init__()
         self.esc = QShortcut(QKeySequence(Qt.Key_Escape), self, activated=self.go_back)
         self.pages = pages
         self.final_target = final_target
@@ -404,7 +392,6 @@ class StepBook(Screen):
             super().keyPressEvent(e)
 
 
-# ====================== ПРАВИЛА ======================
 class SidesPage(Page):
     def __init__(self):
         super().__init__("ШАГ 1", "Четыре стороны шагая",
@@ -430,7 +417,6 @@ class SidesPage(Page):
 
 
 class PracticePage(Page):
-    """Учебный заезд: тот же бросок, что в игре, и один конь на ипподроме."""
 
     def __init__(self, sounds):
         super().__init__("ШАГ 2", "Попробуйте бросить",
@@ -462,7 +448,7 @@ class PracticePage(Page):
         self.track.stop()
         self.dice.reset()
         self.rider = Rider("Вы", is_human=True)
-        self.race = Race([self.rider], length=QUICK_LENGTH)  # учебный — короткий ипподром
+        self.race = Race([self.rider], length=QUICK_LENGTH)
         self.track.set_riders([self.rider], QUICK_LENGTH)
         self.busy = self.holding = False
         self.info.setText("Ваш конь у первой кости. Бросайте!")
@@ -511,7 +497,6 @@ class PracticePage(Page):
 
 
 class ScorePage(Page):
-    """Калькулятор очков: двигайте ползунки — очки пересчитываются сразу."""
 
     def __init__(self):
         super().__init__("ШАГ 3", "Откуда берутся очки",
@@ -668,7 +653,7 @@ class KeyCap(QWidget):
 
 
 class KeysPage(Page):
-    grabs_esc = True  # здесь Esc только загорается, а не уводит со страницы
+    grabs_esc = True
 
     def __init__(self):
         super().__init__("ШАГ 5", "Управление", "Нажимайте клавиши прямо сейчас — они загорятся. "
@@ -726,7 +711,6 @@ class RulesScreen(StepBook):
                          pages, "Играть  →", lambda: self.navigate.emit("setup", {"mode": 0}))
 
 
-# ====================== ОБ ИГРЕ И НАРОДЕ ======================
 class GamesPage(Page):
     def __init__(self, go):
         super().__init__("ЧАСТЬ 1", "Шагай наадан — «игра в косточки»",
@@ -785,7 +769,6 @@ class HerdPage(Page):
 
 
 class Yokhor(QWidget):
-    """Хоровод ёхор: танцоры держатся за руки и идут по ходу солнца. Нажмите — быстрее!"""
 
     def __init__(self):
         super().__init__()
@@ -821,11 +804,10 @@ class Yokhor(QWidget):
         p.setBrush(QColor(T.INK))
         p.drawRoundedRect(r.translated(6, 6), 8, 8)
         p.setPen(QPen(QColor(T.INK), 2))
-        p.setBrush(QColor("#CFE0C0"))  # степная трава
+        p.setBrush(QColor("#CFE0C0"))
         p.drawRoundedRect(r, 8, 8)
         c = QPointF(r.center().x(), r.center().y() + 4)
         rx, ry = r.width() * 0.3, r.height() * 0.24
-        # костёр в центре
         for k, (col, s) in enumerate(((T.RED, 1.0), (T.OCHRE, 0.6))):
             fl = 1 + 0.15 * math.sin(self.t * 9 + k)
             p.setPen(QPen(QColor(T.INK), 2) if k == 0 else Qt.NoPen)
@@ -837,7 +819,6 @@ class Yokhor(QWidget):
             a = self.angle + i * 2 * math.pi / n
             pts.append((math.sin(a) * ry, QPointF(c.x() + math.cos(a) * rx, c.y() + math.sin(a) * ry), i))
         pts.sort(key=lambda x: x[0])
-        # «руки»: цепочка между соседями
         p.setPen(QPen(QColor(T.INK), 3, Qt.SolidLine, Qt.RoundCap))
         pos = {i: q for _, q, i in pts}
         for i in range(n):
@@ -854,7 +835,7 @@ class Yokhor(QWidget):
             p.setBrush(QColor("#E8C9A0"))
             p.drawEllipse(QPointF(x, y - 44 * sc), 9 * sc, 9 * sc)
             p.setBrush(QColor(T.INK))
-            p.drawRect(QRectF(x - 9 * sc, y - 56 * sc, 18 * sc, 6 * sc))  # шапочка
+            p.drawRect(QRectF(x - 9 * sc, y - 56 * sc, 18 * sc, 6 * sc))
         p.setPen(QColor(T.INK))
         p.setFont(ui_font(15, title=True))
         tempo = "медленно" if self.speed < 1.2 else "весело!" if self.speed < 3 else "ВИХРЕМ!"
@@ -895,7 +876,7 @@ class WordsPage(Page):
         prog = self.goal(Progress(len(WORDS), "Выучено слов", "Баярлаа! Все слова открыты."))
         cards = [FlipCard(w, "бурятское слово", w, f"«{tr}»", None, back_color=T.BLUE if k % 3 else T.RED,
                           w=190, h=120) for k, (w, tr) in enumerate(WORDS)]
-        for c in cards:  # у маленьких карточек значка нет — поднимаем подпись
+        for c in cards:
             c.icon = None
         self.lay.addWidget(card_row(cards, prog, cols=4), 4)
         self.lay.addWidget(prog)
@@ -906,7 +887,6 @@ class WordsPage(Page):
 
 
 class QuizPage(Page):
-    """Мини-викторина: пять вопросов подряд, итог со звёздами."""
 
     def __init__(self):
         super().__init__("ЧАСТЬ 5", "Проверь себя", "Пять вопросов обо всём, что вы узнали. Сколько угадаете?")

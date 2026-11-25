@@ -1,11 +1,9 @@
-"""Шагай наадан — Мори урилдаан. Точка входа: python main.py"""
 import sys
 import traceback
 from pathlib import Path
 
 
 def data_dir() -> Path:
-    """Рядом с программой (или с .exe после сборки PyInstaller)."""
     base = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
     return base
 
@@ -23,7 +21,6 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     app.setApplicationName("Шагай наадан")
-    # стандартные кнопки и диалоги Qt (Да/Нет, Отмена, «Сохранить как») — по-русски
     from PySide6.QtCore import QLibraryInfo, QLocale, QTranslator
     QLocale.setDefault(QLocale(QLocale.Russian, QLocale.Russia))
     app._translators = []
@@ -34,7 +31,7 @@ def main() -> int:
             app._translators.append(tr)
     app.setStyleSheet(QSS)
 
-    def excepthook(etype, value, tb):  # никаких «тихих» падений: показываем понятное окно
+    def excepthook(etype, value, tb):
         traceback.print_exception(etype, value, tb)
         QMessageBox.critical(None, "Непредвиденная ошибка", f"{etype.__name__}: {value}")
 

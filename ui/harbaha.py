@@ -1,4 +1,3 @@
-"""Мини-игра «Шагай харбаха» — щелчки по шагаям. Правила — в core/harbaha.py."""
 from __future__ import annotations
 
 import math
@@ -23,18 +22,17 @@ class _B:
         self.x, self.y, self.side, self.a = x, y, side, a
         self.vx = self.vy = self.spin = 0.0
         self.alive = True
-        self.gone = 0.0  # 0..1 — анимация «забрали кость»
+        self.gone = 0.0
 
 
 class HarbahaBoard(QWidget):
-    """Войлок с рассыпанными шагаями. Кость тянут мышью, как рогатку, и отпускают."""
-    changed = Signal()               # очки / попытки / комбо изменились
-    knock = Signal()                 # кости стукнулись
-    over = Signal(int, int, bool, int)  # очки, попаданий, чистый войлок, лучшая серия
+    changed = Signal()
+    knock = Signal()
+    over = Signal(int, int, bool, int)
 
     AIM, DRAG, ROLL, OVER = range(4)
     MAX_PULL = 170.0
-    SPEED = 9.0        # пикс/с на пиксель натяжения
+    SPEED = 9.0
 
     def __init__(self):
         super().__init__()
@@ -48,10 +46,9 @@ class HarbahaBoard(QWidget):
         self._timer.setInterval(16)
         self._timer.timeout.connect(self._tick)
         self._clock = QElapsedTimer()
-        self.floats: list[list] = []  # [x, y, текст, цвет, t]
+        self.floats: list[list] = []
         self.new_game()
 
-    # ---------- геометрия ----------
     def _mat(self) -> QRectF:
         return QRectF(self.rect()).adjusted(2, 2, -8, -8)
 
@@ -65,7 +62,6 @@ class HarbahaBoard(QWidget):
     def _rad(self) -> float:
         return self.size_() * 0.4
 
-    # ---------- партия ----------
     def new_game(self):
         self.score = 0
         self.hits = 0
@@ -87,7 +83,6 @@ class HarbahaBoard(QWidget):
         self.update()
 
     def _place(self):
-        """Рассыпать кости, не допуская наложений."""
         if self.width() < 100:
             return
         a, rad = self._area(), self._rad()
@@ -114,7 +109,6 @@ class HarbahaBoard(QWidget):
     def _alive_sides(self):
         return [b.side for b in self.bones if b.alive]
 
-    # ---------- мышь ----------
     def _bone_at(self, pt: QPointF) -> int:
         rad = self._rad() * 1.25
         for i in reversed(range(len(self.bones))):
@@ -160,7 +154,7 @@ class HarbahaBoard(QWidget):
             return
         self.setCursor(Qt.OpenHandCursor)
         dx, dy, d = self._pull()
-        if d < 12:  # просто щёлкнули — не стреляем
+        if d < 12:
             self.state, self.shooter = self.AIM, -1
             self.update()
             return
@@ -172,7 +166,6 @@ class HarbahaBoard(QWidget):
         self.state = self.ROLL
         self._roll_t = 0.0
 
-    # ---------- физика ----------
     def _tick(self):
         dt = min(0.04, self._clock.restart() / 1000)
         for f in self.floats:
@@ -189,7 +182,7 @@ class HarbahaBoard(QWidget):
     def _physics(self, dt: float):
         a, rad = self._area(), self._rad()
         live = [b for b in self.bones if b.alive]
-        steps = 3  # несколько мелких шагов — кость не «проскочит» сквозь другую
+        steps = 3
         h = dt / steps
         for _ in range(steps):
             for b in live:
@@ -200,7 +193,7 @@ class HarbahaBoard(QWidget):
                 b.vx *= f
                 b.vy *= f
                 b.spin *= max(0.0, 1 - 3 * h)
-                sp = math.hypot(b.vx, b.vy)  # сухое трение войлока
+                sp = math.hypot(b.vx, b.vy)
                 if sp > 0:
                     dec = min(sp, 120 * h)
                     b.vx -= b.vx / sp * dec
@@ -278,7 +271,6 @@ class HarbahaBoard(QWidget):
             self.over.emit(self.score, self.hits, cleared, self.best_streak)
         self.changed.emit()
 
-    # ---------- рисование ----------
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
@@ -293,7 +285,6 @@ class HarbahaBoard(QWidget):
         size = self.size_()
         rad = self._rad()
 
-        # подсказка «во что можно бить»: кости той же стороны в пунктирных кольцах
         focus = self.shooter if self.state == self.DRAG else self.hover if self.state == self.AIM else -1
         if focus >= 0:
             side = self.bones[focus].side
@@ -304,7 +295,7 @@ class HarbahaBoard(QWidget):
                     p.setPen(pen)
                     p.drawEllipse(QPointF(b.x, b.y), rad * 1.45, rad * 1.45)
 
-        if self.state == self.DRAG:  # рогатка и линия прицела
+        if self.state == self.DRAG:
             b = self.bones[self.shooter]
             dx, dy, d = self._pull()
             p.setPen(QPen(QColor(T.PAPER_LIGHT), 3, Qt.SolidLine, Qt.RoundCap))
@@ -316,7 +307,6 @@ class HarbahaBoard(QWidget):
                 t = k / n
                 p.drawEllipse(QPointF(b.x + dx * t * 2.2, b.y + dy * t * 2.2), 3.2 * (1 - t * 0.6),
                               3.2 * (1 - t * 0.6))
-            # шкала силы
             p.setPen(QPen(QColor(T.OCHRE), 5, Qt.SolidLine, Qt.FlatCap))
             p.setBrush(Qt.NoBrush)
             box = QRectF(b.x - rad * 1.8, b.y - rad * 1.8, rad * 3.6, rad * 3.6)
@@ -326,7 +316,6 @@ class HarbahaBoard(QWidget):
             if not b.alive:
                 if b.gone >= 1:
                     continue
-                # забранная кость взлетает и тает
                 g = b.gone
                 p.setOpacity(1 - g)
                 draw_shagai(p, QPointF(b.x, b.y - g * 60), size * (1 + g * 0.4), b.side, b.a,
@@ -340,7 +329,7 @@ class HarbahaBoard(QWidget):
                 p.drawEllipse(QPointF(b.x, b.y), rad * 1.3, rad * 1.3)
             draw_shagai(p, QPointF(b.x, b.y), size, b.side, b.a, shadow=QColor(0, 0, 0, 90))
 
-        for x, y, text, color, t in self.floats:  # всплывающие «+200 ×2!»
+        for x, y, text, color, t in self.floats:
             p.setOpacity(max(0.0, 1 - t / 1.4))
             p.setFont(ui_font(24, title=True))
             rect = QRectF(x - 220, y - 60 - t * 50, 440, 30)
@@ -368,7 +357,6 @@ class HarbahaBoard(QWidget):
 
 
 class TrayWidget(QWidget):
-    """Собранные кости — маленьким рядом."""
 
     def __init__(self):
         super().__init__()
@@ -390,7 +378,7 @@ class TrayWidget(QWidget):
 
 class HarbahaScreen(OrnamentBackground):
     navigate = Signal(str, dict)
-    achieve = Signal(str, list)   # имя, коды достижений
+    achieve = Signal(str, list)
 
     def __init__(self, db, sounds):
         super().__init__()

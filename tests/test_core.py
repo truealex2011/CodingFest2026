@@ -79,7 +79,7 @@ def test_db_crud_and_filter():
     db.add("Сэсэг", 500, 20, 2, 3)
     db.add("баир", 100, 22, 3, 3)
     assert [r.name for r in db.list()] == ["Баатар", "Сэсэг", "баир"]
-    assert [r.name for r in db.list("БА")] == ["Баатар", "баир"]  # регистр кириллицы
+    assert [r.name for r in db.list("БА")] == ["Баатар", "баир"]
     assert db.list("нет такого") == []
     db.rename(a, "Батор")
     assert db.list()[0].name == "Батор"
@@ -106,7 +106,6 @@ def test_export(tmp_path):
     assert "Баатар" in p.read_text(encoding="utf-8-sig")
 
 
-# ---------- достижения ----------
 from core import achievements as A
 
 
@@ -120,7 +119,7 @@ def test_race_achievements():
     got = A.for_race(won=True, throws=12, quiz_ok=3, quiz_asked=3, hotseat=True, races_played=10)
     assert set(got) == {"winner", "fast", "scholar", "friends", "veteran"}
     assert A.for_race(won=False, throws=30, quiz_ok=1, quiz_asked=3, hotseat=False, races_played=1) == []
-    assert "scholar" not in A.for_race(False, 5, 0, 0, False, 1)  # вопросов не было — не знаток
+    assert "scholar" not in A.for_race(False, 5, 0, 0, False, 1)
 
 
 def test_harbaha_achievements():
@@ -149,7 +148,6 @@ def test_player_records_and_harbaha():
         db.add_harbaha("", 10, 1)
 
 
-# ---------- «Шагай харбаха» ----------
 from core import harbaha as HB
 
 
@@ -179,8 +177,6 @@ def test_plural_forms():
     assert throws_txt(1) == "1 бросок"
 
 
-
-# ---------- быстрый заезд ----------
 from core.shagai import QUICK_LENGTH
 
 
@@ -190,7 +186,7 @@ def test_quick_race_finishes_at_six():
     race.play_turn([H, H, H, S, S])
     assert not race.over and r.progress == 3
     race.play_turn([H, H, H, H, S])
-    assert race.over and race.winner is r and r.progress == QUICK_LENGTH  # дальше финиша не уходит
+    assert race.over and race.winner is r and r.progress == QUICK_LENGTH
 
 
 def test_quick_race_scores_less_than_classic():
