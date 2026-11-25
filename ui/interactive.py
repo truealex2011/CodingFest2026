@@ -277,7 +277,7 @@ QPushButton#side:hover {{ color: {T.PAPER_LIGHT}; text-decoration: underline; }}
 class StepBook(Screen):
 
     def __init__(self, title: str, subtitle: str, pages: list[tuple[str, Page]], final_text: str, final_target):
-        super().__init__()
+        super().__init__(back=False)
         self.esc = QShortcut(QKeySequence(Qt.Key_Escape), self, activated=self.go_back)
         self.pages = pages
         self.final_target = final_target
@@ -613,7 +613,8 @@ class KeyCap(QWidget):
     def __init__(self, text: str, caption: str, w: int = 110):
         super().__init__()
         self.text, self.caption = text, caption
-        self.setFixedSize(max(w, 150), 112)
+        self.setMinimumSize(170, 128)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.kw = w
         self.lit = 0.0
         self.tried = False
@@ -631,12 +632,13 @@ class KeyCap(QWidget):
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        x = (self.width() - self.kw) / 2
+        kw = min(self.kw, self.width() - 6)
+        x = (self.width() - kw) / 2
         down = 4 * self.lit
-        r = QRectF(x, 4 + down, self.kw - 6, 50)
+        r = QRectF(x, 4 + down, kw - 6, 50)
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(T.INK))
-        p.drawRoundedRect(QRectF(x, 10, self.kw - 6, 50), 7, 7)
+        p.drawRoundedRect(QRectF(x, 10, kw - 6, 50), 7, 7)
         col = QColor(T.OCHRE) if self.tried else QColor(T.PAPER_LIGHT)
         if self.lit > 0:
             col = QColor(T.RED)
@@ -647,9 +649,8 @@ class KeyCap(QWidget):
         p.setFont(ui_font(19, title=True))
         p.drawText(r, Qt.AlignCenter, self.text)
         p.setPen(QColor(T.INK_SOFT))
-        p.setFont(ui_font(15))
-        p.drawText(QRectF(0, 66, self.width(), 46), Qt.AlignHCenter | Qt.AlignTop | Qt.TextWordWrap,
-                   self.caption)
+        fit_text(p, QRectF(4, 66, self.width() - 8, self.height() - 68),
+                 self.caption, Qt.AlignHCenter | Qt.AlignTop | Qt.TextWordWrap, 16, 11)
 
 
 class KeysPage(Page):
@@ -664,12 +665,12 @@ class KeysPage(Page):
             "esc": KeyCap("Esc", "назад, в меню"),
             "ctrlf": KeyCap("Ctrl + F", "поиск в рекордах", 130),
             "del": KeyCap("Delete", "удалить запись"),
-            "dbl": KeyCap("2× клик", "здесь — по странице;\nв рекордах — переименовать", 130),
+            "dbl": KeyCap("2× клик", "щёлкните здесь дважды;\nв рекордах — переименовать", 130),
         }
         g = QGridLayout()
         g.setHorizontalSpacing(10)
         for k, c in enumerate(self.caps.values()):
-            g.addWidget(c, k // 3, k % 3, Qt.AlignCenter)
+            g.addWidget(c, k // 3, k % 3)
         self.lay.addLayout(g)
         self.prog = self.goal(Progress(len(self.caps), "Попробовано", "Отлично! Вы готовы к скачкам."))
         self.lay.addWidget(self.prog)
